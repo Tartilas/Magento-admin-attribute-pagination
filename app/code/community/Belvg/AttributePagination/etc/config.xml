@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Tartilas_AttributePagination>
+            <version>1.0.0</version>
+        </Tartilas_AttributePagination>
+    </modules>
+    <global>
+        <blocks>
+            <tartilas_attributepagination>
+                <class>Tartilas_AttributePagination_Block</class>
+            </tartilas_attributepagination>
+            <adminhtml>
+                <rewrite>
+                    <catalog_product_attribute_edit_tab_options>Tartilas_AttributePagination_Block_Adminhtml_Options</catalog_product_attribute_edit_tab_options>
+                </rewrite>
+            </adminhtml>
+        </blocks>
+    </global>
+</config>

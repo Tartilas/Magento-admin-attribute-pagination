@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Tartilas_AttributePagination>
+            <active>true</active>
+            <codePool>community</codePool>
+            <depends></depends>
+        </Tartilas_AttributePagination>
+    </modules>
+</config>

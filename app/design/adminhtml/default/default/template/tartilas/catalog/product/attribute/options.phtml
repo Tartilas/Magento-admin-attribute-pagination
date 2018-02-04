@@ -1,0 +1,271 @@
+<?php
+/**
+ * Tartilas_AttributePagination
+ */
+?>
+<?php
+/**
+ * Attribute options control
+ *
+ * @see Mage_Adminhtml_Block_Catalog_Product_Attribute_Edit_Tab_Options
+ */
+?>
+<div>
+<ul class="messages">
+    <li class="notice-msg">
+        <ul>
+            <li><?php echo Mage::helper('catalog')->__('If you do not specify an option value for a specific store view then the default (Admin) value will be used.') ?></li>
+        </ul>
+    </li>
+</ul>
+</div>
+
+<div class="entity-edit">
+    <div class="entry-edit-head">
+        <h4 class="icon-head head-edit-form fieldset-legend"><?php echo Mage::helper('catalog')->__('Manage Titles (Size, Color, etc.)') ?></h4>
+    </div>
+    <div class="box">
+            <div class="hor-scroll">
+            <table class="dynamic-grid" cellspacing="0" id="attribute-labels-table">
+                <tr>
+                <?php foreach ($this->getStores() as $_store): ?>
+                    <th><?php echo $_store->getName() ?></th>
+                <?php endforeach; ?>
+                </tr>
+                <tr>
+                    <?php $_labels = $this->getLabelValues() ?>
+                    <?php foreach ($this->getStores() as $_store): ?>
+                    <td>
+                        <input class="input-text<?php if($_store->getId()==0): ?> required-option<?php endif; ?>" type="text" name="frontend_label[<?php echo $_store->getId() ?>]" value="<?php echo $this->htmlEscape($_labels[$_store->getId()]) ?>"<?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/>
+                    </td>
+                    <?php endforeach; ?>
+                </tr>
+            </table>
+            </div>
+    </div>
+</div>
+<br/>
+<div class="entity-edit" id="matage-options-panel">
+    <div class="entry-edit-head">
+    <h4 class="icon-head head-edit-form fieldset-legend"><?php echo Mage::helper('catalog')->__('Manage Options (values of your attribute)') ?></h4>
+    </div>
+    <div class="box">
+        <div class="hor-scroll">
+            <table class="dynamic-grid" cellspacing="0"  cellpadding="0">
+                <tr id="attribute-options-table">
+                    <?php foreach ($this->getStores() as $_store): ?>
+                        <th><?php echo $_store->getName() ?></th>
+                    <?php endforeach; ?>
+                        <th><?php echo Mage::helper('catalog')->__('Position') ?></th>
+                        <th class="nobr a-center"><?php echo Mage::helper('catalog')->__('Is Default') ?></th>
+                        <th>
+                            <?php if (!$this->getReadOnly()):?>
+                                <?php echo $this->getAddNewButtonHtml() ?>
+                            <?php endif;?>
+                        </th>
+                    </tr>
+                    <tr class="no-display template" id="row-template">
+                        <?php foreach ($this->getStores() as $_store): ?>
+                        <td><input name="option[value][{{id}}][<?php echo $_store->getId() ?>]" value="{{store<?php echo $_store->getId() ?>}}" class="input-text<?php if($_store->getId()==0): ?> required-option<?php endif; ?>" type="text" <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/></td>
+                        <?php endforeach; ?>
+                        <td class="a-center"><input class="input-text" type="text" name="option[order][{{id}}]" value="{{sort_order}}" <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/></td>
+                        <td><input class="input-radio" type="radio" name="default[]" value="{{id}}" <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/></td>
+                        <td class="a-left">
+                            <input type="hidden" class="delete-flag" name="option[delete][{{id}}]" value="" />
+                            <?php if (!$this->getReadOnly()):?>
+                                <?php echo $this->getDeleteButtonHtml() ?>
+                            <?php endif;?>
+                        </td>
+                    </tr>
+            </table>
+        </div>
+        <input type="hidden" id="option-count-check" value="" />
+    </div>
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var optionDefaultInputType = 'radio';
+
+// IE removes quotes from element.innerHTML whenever it thinks they're not needed, which breaks html.
+var templateText =
+        '<tr class="option-row">'+
+<?php foreach ($this->getStores() as $_store): ?>
+            '<td><input name="option[value][{{id}}][<?php echo $_store->getId() ?>]" value="{{store<?php echo $_store->getId() ?>}}" class="input-text<?php if($_store->getId()==0): ?> required-option<?php endif; ?>" type="text" <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/><\/td>'+
+<?php endforeach; ?>
+            '<td><input class="input-text" type="text" name="option[order][{{id}}]" value="{{sort_order}}" <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/><\/td>'+
+            '<td class="a-center"><input class="input-radio" type="{{intype}}" name="default[]" value="{{id}}" {{checked}} <?php if ($this->getReadOnly()):?> disabled="disabled"<?php endif;?>/><\/td>'+
+            '<td class="a-left" id="delete_button_container_{{id}}">'+
+                '<input type="hidden" class="delete-flag" name="option[delete][{{id}}]" value="" />'+
+                <?php if (!$this->getReadOnly()):?>
+                    '<?php echo $this->getDeleteButtonHtml() ?>'+
+                <?php endif;?>
+            '<\/td>'+
+        '<\/tr>';
+
+var attributeOption = {
+    table : $('attribute-options-table'),
+    templateSyntax : /(^|.|\r|\n)({{(\w+)}})/,
+    templateText : templateText,
+    itemCount : 0,
+    totalItems : 0,
+    isReadOnly: <?php echo (int)$this->getReadOnly(); ?>,
+    add : function(data) {
+        this.template = new Template(this.templateText, this.templateSyntax);
+        var isNewOption = false;
+        if(!data.id){
+            data = {};
+            data.id  = 'option_'+this.itemCount;
+            isNewOption = true;
+        }
+        if (!data.intype)
+            data.intype = optionDefaultInputType;
+        Element.insert(this.table, {after: this.template.evaluate(data)});
+        if (isNewOption && !this.isReadOnly) {
+            this.enableNewOptionDeleteButton(data.id);
+        }
+        this.bindRemoveButtons();
+        this.itemCount++;
+        this.totalItems++;
+        this.updateItemsCountField();
+    },
+    remove : function(event){
+        var element = $(Event.findElement(event, 'tr')); // !!! Button already
+                                                               // have table parent in safari
+        // Safari workaround
+        element.ancestors().each(function(parentItem){
+           if (parentItem.hasClassName('option-row')) {
+               element = parentItem;
+               throw $break;
+           } else if (parentItem.hasClassName('box')) {
+               throw $break;
+           }
+        });
+
+
+        if(element){
+            var elementFlags = element.getElementsByClassName('delete-flag');
+            if(elementFlags[0]){
+                elementFlags[0].value=1;
+            }
+
+            element.addClassName('no-display');
+            element.addClassName('template');
+            element.hide();
+            this.totalItems--;
+            this.updateItemsCountField();
+        }
+    },
+    updateItemsCountField: function() {
+        if (this.totalItems > 0) {
+            $('option-count-check').value = '1';
+        } else {
+            $('option-count-check').value = '';
+        }
+    },
+    enableNewOptionDeleteButton: function(id) {
+        $$('#delete_button_container_' + id + ' button').each(function(button) {
+            button.enable();
+            button.removeClassName('disabled');
+        });
+    },
+    bindRemoveButtons : function(){
+        var buttons = $$('.delete-option');
+        for(var i=0;i<buttons.length;i++){
+            if(!$(buttons[i]).binded){
+                $(buttons[i]).binded = true;
+                Event.observe(buttons[i], 'click', this.remove.bind(this));
+            }
+        }
+    }
+
+}
+if($('row-template')){
+    $('row-template').remove();
+}
+attributeOption.bindRemoveButtons();
+
+if($('add_new_option_button')){
+    Event.observe('add_new_option_button', 'click', attributeOption.add.bind(attributeOption));
+}
+Validation.addAllThese([
+    ['required-option', '<?php echo Mage::helper('catalog')->__('Failed') ?>', function(v) {
+        return !Validation.get('IsEmpty').test(v);
+}]]);
+Validation.addAllThese([
+    ['required-options-count', '<?php echo Mage::helper('catalog')->__('Options is required') ?>', function(v) {
+        return !Validation.get('IsEmpty').test(v);
+}]]);
+
+<?php $tmp_arr = array(); ?>
+<?php foreach ($this->getOptionValues() as $_value): ?>
+    <?php $tmp_arr[] = $_value ?>
+<?php endforeach; ?>
+<?php $tmp_arr = array_reverse($tmp_arr); ?>
+<?php foreach ($tmp_arr as $_value): ?>
+    attributeOption.add(<?php echo $_value->toJson() ?>);
+<?php endforeach; ?>
+//]]>
+</script>
+
+<div class="entity-edit" id="matage-options-panel">
+    <table cellspacing="0" class="actions">
+        <tr>
+            <?php if($this->collection->getLastPageNumber() > 1): ?>
+                <td class="pager">
+                    <?php echo $this->__('Page') ?>
+
+                    <?php $_curPage  = $this->collection->getCurPage() ?>
+                    <?php $_lastPage = $this->collection->getLastPageNumber() ?>
+                    <?php if($_curPage>1): ?>
+                        <a href="#" title="<?php echo $this->__('Previous page') ?>" onclick="window.location.href='<?php echo $this->new_url . '/p/' . ($_curPage-1) ?>';return false;"><img src="<?php echo $this->getSkinUrl('images/pager_arrow_left.gif') ?>" alt="Go to Previous page" class="arrow"/></a>
+                    <?php else: ?>
+                        <img src="<?php echo $this->getSkinUrl('images/pager_arrow_left_off.gif') ?>" alt="Go to Previous page" class="arrow"/>
+                    <?php endif; ?>
+
+                    <input type="text" name="<?php echo $this->getVarNamePage() ?>" value="<?php echo $_curPage ?>" class="input-text page" onchange="window.location.href='<?php echo $this->new_url . '/n/' . ($this->n) ?>/p/' + this.value; return false;"/>
+
+                    <?php if($_curPage < $_lastPage): ?>
+                        <a href="#" title="<?php echo $this->__('Next page') ?>" onclick="window.location.href='<?php echo $this->new_url . '/p/' . ($_curPage+1) ?>';return false;"><img src="<?php echo $this->getSkinUrl('images/pager_arrow_right.gif') ?>" alt="Go to Next page" class="arrow"/></a>
+                    <?php else: ?>
+                        <img src="<?php echo $this->getSkinUrl('images/pager_arrow_right_off.gif') ?>" alt="Go to Previous page" class="arrow"/>
+                    <?php endif; ?>
+
+                    <?php echo $this->__('of %s pages', $this->collection->getLastPageNumber()) ?>
+                    <span class="separator">|</span>
+                    <?php echo $this->__('View') ?>
+                    <select id="selectAttrLimit" name="<?php echo $this->getVarNameLimit() ?>" onchange="window.location.href='<?php echo $this->new_url . '/p/' . ($_curPage) ?>/n/' + this.value; return false;">
+                        <option value="10"<?php if($this->collection->getPageSize()==10): ?> selected="selected"<?php endif; ?>>10</option>
+                        <option value="20"<?php if($this->collection->getPageSize()==20): ?> selected="selected"<?php endif; ?>>20</option>
+                        <option value="30"<?php if($this->collection->getPageSize()==30): ?> selected="selected"<?php endif; ?>>30</option>
+                        <option value="50"<?php if($this->collection->getPageSize()==50): ?> selected="selected"<?php endif; ?>>50</option>
+                        <option value="100"<?php if($this->collection->getPageSize()==100): ?> selected="selected"<?php endif; ?>>100</option>
+                        <option value="200"<?php if($this->collection->getPageSize()==200): ?> selected="selected"<?php endif; ?>>200</option>
+                    </select>
+                    <?php echo $this->__('per page') ?><span class="separator">|</span>
+                    <?php echo $this->__('Total %d records found', $this->collection->getSize()) ?>
+                    <span id="<?php echo $this->getHtmlId() ?>-total-count" class="no-display"><?php echo $this->collection->getSize() ?></span>
+                    <?php if($this->getRssLists()): ?>
+                        <?php foreach ($this->getRssLists() as $_rss): ?>
+                            <span class="separator">|</span><a href="<?php echo $_rss->getUrl() ?>" class="link-feed"><?php echo $_rss->getLabel() ?></a>
+                        <?php endforeach ?>
+                    <?php endif; ?>
+                </td>
+            <?php endif ?>
+            <?php if($this->getExportTypes()): ?>
+                <td class="export a-right">
+                    <img src="<?php echo $this->getSkinUrl('images/icon_export.gif') ?>" alt="" class="v-middle"/>&nbsp; <?php echo $this->__('Export to:') ?>
+                    <select name="<?php echo $this->getId() ?>_export" id="<?php echo $this->getId() ?>_export" style="width:8em;">
+                        <?php foreach ($this->getExportTypes() as $_type): ?>
+                            <option value="<?php echo $_type->getUrl() ?>"><?php echo $_type->getLabel() ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php echo $this->getExportButtonHtml() ?>
+                </td>
+            <?php endif; ?>
+            <td class="filter-actions a-right">
+                <?php echo $this->getMainButtonsHtml() ?>
+            </td>
+        </tr>
+    </table>
+</div>
